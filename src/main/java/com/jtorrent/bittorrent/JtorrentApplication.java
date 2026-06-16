@@ -5,6 +5,7 @@ import com.jtorrent.bittorrent.service.TorrentManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.jtorrent.bittorrent.service.TorrentFileManager;
 import com.jtorrent.bittorrent.service.TrackerService;
 import com.jtorrent.bittorrent.service.PeerService;
 import java.util.concurrent.*;
@@ -102,37 +103,20 @@ public class JtorrentApplication implements org.springframework.boot.CommandLine
         String announceUrl = trackers.get(0);
         Map<String, Object> info = (Map<String, Object>) torrentData.get("info");
 
-        // Handle both single-file and multi-file torrents
-        long totalLength;
-        if (info.containsKey("length")) {
-            totalLength = (long) info.get("length");
-        } else {
-            java.util.List<Map<String, Object>> files = (java.util.List<Map<String, Object>>) info.get("files");
-            totalLength = 0;
-            for (Map<String, Object> fileEntry : files) {
-                totalLength += (long) fileEntry.get("length");
-            }
-        }
-
-        // NEW: Get piece details
-        long standardPieceLength = ((Number) info.get("piece length")).longValue();
-        byte[] piecesAllHashes = (byte[]) info.get("pieces");
-        int totalPieces = (int) Math.ceil((double) totalLength / standardPieceLength);
-
         byte[] nameBytes = (byte[]) info.get("name");
         String fileName = new String(nameBytes, StandardCharsets.UTF_8);
         System.out.println("File Name: " + fileName);
 
-        // Pre-allocate the file
-        java.io.File destFile = new java.io.File(fileName);
-        System.out.println("Pre-allocating file of size " + totalLength + " bytes...");
-        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(destFile, "rw")) {
-            raf.setLength(totalLength);
-        }
-        System.out.println("File pre-allocated successfully.");
+        // Delegate file initialization to TorrentFileManager (handles single & multi-file)
+        TorrentFileManager fileManager = new TorrentFileManager();
+        fileManager.initializeFiles(info, ".");
 
-        // Pass total pieces, standard length, total length, pieces hashes, and destFile to the manager
-        TorrentManager torrentManager = new TorrentManager(totalPieces, (int) standardPieceLength, totalLength, piecesAllHashes, destFile);
+        long totalLength = fileManager.getTotalSize();
+        long standardPieceLength = ((Number) info.get("piece length")).longValue();
+        byte[] piecesAllHashes = (byte[]) info.get("pieces");
+        int totalPieces = (int) Math.ceil((double) totalLength / standardPieceLength);
+
+        TorrentManager torrentManager = new TorrentManager(totalPieces, (int) standardPieceLength, totalLength, piecesAllHashes, fileManager);
 
         // Logic for 'left' parameter: Total - (pieces_completed * piece_size)
         // Initially, pieces_completed is 0, so left = totalLength

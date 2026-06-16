@@ -5,22 +5,21 @@ import java.util.Arrays;
 public class TorrentManager {
 
     private final int totalPieces;
-    private final int standardPieceSize; // Added this
+    private final int standardPieceSize;
     private final long totalLength;
     private final byte[] piecesAllHashes;
-    private final java.io.File destinationFile;
+    private final TorrentFileManager fileManager;
     private final boolean[] completedPieces;
     private final int[] rarityMap;
     private final boolean[] inProgressPieces;
-    private int completedCount = 0; // O(1) counter for completed pieces
+    private int completedCount = 0;
 
-    // Updated Constructor to accept destinationFile
-    public TorrentManager(int totalPieces, int standardPieceSize, long totalLength, byte[] piecesAllHashes, java.io.File destinationFile) {
+    public TorrentManager(int totalPieces, int standardPieceSize, long totalLength, byte[] piecesAllHashes, TorrentFileManager fileManager) {
         this.totalPieces = totalPieces;
         this.standardPieceSize = standardPieceSize;
         this.totalLength = totalLength;
         this.piecesAllHashes = piecesAllHashes;
-        this.destinationFile = destinationFile;
+        this.fileManager = fileManager;
         this.completedPieces = new boolean[totalPieces];
         this.rarityMap = new int[totalPieces];
         this.inProgressPieces = new boolean[totalPieces];
@@ -134,18 +133,8 @@ public class TorrentManager {
         return targetPiece;
     }
 
-    /**
-     * Writes a downloaded piece to the pre-allocated file at the correct offset.
-     */
-    public synchronized void writePiece(int pieceIndex, byte[] data) throws java.io.IOException {
-        if (destinationFile == null) {
-            return;
-        }
-        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(destinationFile, "rw")) {
-            long offset = (long) pieceIndex * standardPieceSize;
-            raf.seek(offset);
-            raf.write(data);
-        }
+    public synchronized void writePiece(int pieceIndex, byte[] data) throws Exception {
+        fileManager.writePiece(pieceIndex, data);
     }
 
     public synchronized boolean isComplete() {
