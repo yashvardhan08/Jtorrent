@@ -34,12 +34,12 @@ public class JtorrentApplication implements org.springframework.boot.CommandLine
     @Override
     public void run(String... args) throws Exception {
         // 1. Path to your downloaded .torrent file
-//        if (args.length == 0) {
-//            System.out.println("Usage: java -jar jtorrent.jar <path_to_torrent_file>");
-//            return;
-//        }
+        if (args.length == 0) {
+            System.out.println("Usage: java -jar jtorrent.jar <path_to_torrent_file>");
+            return;
+        }
 
-        Path torrentPath = Path.of("C:\\Users\\The Beast\\Desktop\\tears-of-steel.torrent");
+        Path torrentPath = Path.of(args[0]);
 
         if (!Files.exists(torrentPath)) {
             System.out.println("Please place a .torrent file at the path specified!");
