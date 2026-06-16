@@ -350,7 +350,34 @@ java -jar target/bittorrent-0.0.1-SNAPSHOT.jar /path/to/file.torrent
 
 ---
 
-## 9. Limitations & Future Work
+## 9. Known Issues & Future Work
+
+### Critical (crash or hang)
+
+| # | Bug | File:Line | Details | Status |
+|---|-----|-----------|---------|--------|
+| 1 | **CHOKE infinite loop** | `PeerService.java:123-128` | `waitForPieceInfo()` loops forever on CHOKE — never returns false, thread hangs | ❌ Open |
+| 2 | **No bounds check on received block** | `PeerService.java:168` | `System.arraycopy` has no validation of `begin` or `block.length`. Malicious peer → `ArrayIndexOutOfBounds` crash | ❌ Open |
+| 3 | **UDP response buffer too small** | `TrackerService.java:106` | Fixed 4096-byte buffer silently truncates tracker responses with ~680+ peers | ❌ Open |
+
+### Moderate (incorrect behavior)
+
+| # | Bug | File:Line | Details | Status |
+|---|-----|-----------|---------|--------|
+| 4 | **RandomAccessFile open/close per piece** | `TorrentFileManager.java:88-91` | File opened, seeked, written, closed for every single piece — thousands of syscalls | ❌ Open |
+| 5 | **rarityMap never decrements** | `TorrentManager.java:89-99` | Peer disconnects → its pieces stay counted. Rarity inflates, rarest-first degrades | ❌ Open |
+| 6 | **Integer.parseInt for string length** | `BencodeParser.java:91` | String length parsed as `int` — spec allows strings >2GB, would throw `NumberFormatException` | ❌ Open |
+| 7 | **blockIdx assumes 16KB alignment** | `PeerService.java:169` | `begin / blockSize` assumes `begin` is a multiple of 16384. Malformed response → wrong block slot | ❌ Open |
+| 8 | **No validation of received block size** | `PeerService.java:165` | `msgLen - 9` determines block array size — no check against expected size | ❌ Open |
+| 9 | **completedBytes ignores last piece** | `JtorrentApplication.java:123` | Uses `standardPieceLength` for all pieces — last piece is often smaller. Tracker `left` value slightly wrong | ❌ Open |
+
+### Fixed
+
+| # | Bug | Fix |
+|---|-----|-----|
+| 10 | **Hardcoded torrent path** | Now accepts path as CLI argument (`args[0]`) |
+
+### Feature Gaps
 
 | Area | Current | Desired |
 |------|---------|---------|
@@ -360,7 +387,7 @@ java -jar target/bittorrent-0.0.1-SNAPSHOT.jar /path/to/file.torrent
 | **Endgame mode** | None — last few pieces can stall | Request from multiple peers, cancel duplicates |
 | **Tit-for-tat unchoking** | None — other peers may choke us | BEP-0003 choke/unchoke algorithm |
 | **Resume support** | None — restarts from zero | Save/load piece completion bitfield |
-| **Upload** | None — only downloads | Actually send HAVE messages, unchoke uploaders |
+| **Upload** | None — only downloads | Send HAVE messages, unchoke uploaders |
 
 ---
 
