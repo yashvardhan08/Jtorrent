@@ -103,7 +103,7 @@ public class TrackerService {
             DatagramPacket announcePacket = new DatagramPacket(announceReq.array(), 98, address, port);
             socket.send(announcePacket);
 
-            byte[] announceResBuf = new byte[4096];
+            byte[] announceResBuf = new byte[65507];
             DatagramPacket announceResPacket = new DatagramPacket(announceResBuf, announceResBuf.length);
             socket.receive(announceResPacket);
 

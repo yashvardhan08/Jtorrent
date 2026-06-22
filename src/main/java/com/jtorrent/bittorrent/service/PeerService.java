@@ -164,7 +164,9 @@ public class PeerService {
                 int begin = in.readInt();
                 byte[] block = new byte[msgLen - 9];
                 in.readFully(block);
-
+                if(begin % blockSize != 0 || begin < 0 || (begin + block.length) > pieceData.length){
+                    throw new RuntimeException("Peer sent invalid block: begin=" + begin + ", block.length=" + block.length);
+                }
                 System.arraycopy(block, 0, pieceData, begin, block.length);
                 int blockIdx = begin / blockSize;
                 if (!blockReceived[blockIdx]) {
@@ -208,6 +210,9 @@ public class PeerService {
                 for (byte b : actualHash) sb.append(String.format("%02x", b));
                 throw new RuntimeException(sb.toString());
             }
+        }
+        else {
+            throw new RuntimeException("expected piece hash is null");
         }
 
         // Write piece to disk

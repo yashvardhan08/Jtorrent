@@ -357,8 +357,8 @@ java -jar target/bittorrent-0.0.1-SNAPSHOT.jar /path/to/file.torrent
 | # | Bug | File:Line | Details | Status |
 |---|-----|-----------|---------|--------|
 | 1 | **CHOKE infinite loop** | `PeerService.java:123-128` | `waitForPieceInfo()` loops forever on CHOKE — never returns false, thread hangs | ❌ Open |
-| 2 | **No bounds check on received block** | `PeerService.java:168` | `System.arraycopy` has no validation of `begin` or `block.length`. Malicious peer → `ArrayIndexOutOfBounds` crash | ❌ Open |
-| 3 | **UDP response buffer too small** | `TrackerService.java:106` | Fixed 4096-byte buffer silently truncates tracker responses with ~680+ peers | ❌ Open |
+| 2 | **No bounds check on received block** | `PeerService.java:168` | `System.arraycopy` has no validation of `begin` or `block.length`. Malicious peer → `ArrayIndexOutOfBounds` crash |  ✅ Fixed |
+| 3 | **UDP response buffer too small** | `TrackerService.java:106` | Fixed 4096-byte buffer silently truncates tracker responses with ~680+ peers | ✅ Fixed |
 
 ### Moderate (incorrect behavior)
 
@@ -376,6 +376,8 @@ java -jar target/bittorrent-0.0.1-SNAPSHOT.jar /path/to/file.torrent
 | # | Bug | Fix |
 |---|-----|-----|
 | 10 | **Hardcoded torrent path** | Now accepts path as CLI argument (`args[0]`) |
+| 2 | **No bounds check on received block** | Added bounds + alignment validation on `begin` and `block.length` before `arraycopy`; invalid blocks now throw immediately |
+| 3 | **UDP response buffer too small** | Buffer enlarged from 4096 to 65507 bytes (max UDP payload), eliminating truncation |
 
 ### Feature Gaps
 
